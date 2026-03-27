@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NutriComp — Comparateur</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{--np:#059669;--nm:#2563EB;--bg:#F7F5F0;--surface:#fff;--border:#E5E0D8;--text:#1A1816;--muted:#7A756E;--r:10px;--ff:"DM Sans",sans-serif;--fm:"DM Mono",monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--ff);background:var(--bg);color:var(--text);min-height:100vh}
+.shell{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
+.sidebar{background:#1A1816;color:#fff;padding:1.5rem 1.25rem;position:sticky;top:0;height:100vh;overflow-y:auto;display:flex;flex-direction:column;gap:1.5rem}
+.main{padding:1.75rem;overflow-y:auto;max-width:1200px}
+.logo{font-size:1rem;font-weight:700;letter-spacing:-0.02em}
+.logo span{display:block;font-size:0.6rem;font-weight:400;opacity:.4;letter-spacing:.1em;text-transform:uppercase;margin-top:3px}
+.nav-sec{font-size:.58rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;opacity:.35;margin-bottom:.4rem}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:7px;cursor:pointer;font-size:.82rem;font-weight:500;transition:background .12s;opacity:.6;border:none;background:none;color:#fff;width:100%;text-align:left;font-family:var(--ff)}
+.nav-item:hover,.nav-item.active{background:rgba(255,255,255,.1);opacity:1}
+.ndot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.d-np{background:#34D399}.d-nm{background:#60A5FA}
+.ptitle{font-size:1.5rem;font-weight:700;letter-spacing:-.03em;margin-bottom:.25rem}
+.psub{font-size:.82rem;color:var(--muted);margin-bottom:1.5rem}
+.panel{display:none}.panel.active{display:block}
+.tabs{display:flex;gap:3px;background:var(--border);padding:3px;border-radius:8px;margin-bottom:1.5rem;width:fit-content}
+.tab{padding:6px 16px;border-radius:6px;font-size:.79rem;font-weight:600;cursor:pointer;color:var(--muted);border:none;background:none;font-family:var(--ff);transition:all .12s}
+.tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1.25rem}
+.card-title{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.9rem}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.75rem;margin-bottom:1.5rem}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:.9rem}
+.stat-lbl{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:5px}
+.stat-val{font-family:var(--fm);font-size:1.2rem;font-weight:700}
+.stat-sub{font-size:.7rem;color:var(--muted);margin-top:2px}
+.filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1.25rem;align-items:center}
+.fl{font-size:.78rem;color:var(--muted);font-weight:600}
+.chip{padding:4px 13px;border-radius:20px;border:1.5px solid var(--border);font-size:.78rem;font-weight:500;cursor:pointer;transition:all .12s;background:var(--surface);color:var(--text);font-family:var(--ff)}
+.chip.active{background:var(--text);color:#fff;border-color:var(--text)}
+.tbl{width:100%;border-collapse:collapse;font-size:.83rem}
+.tbl th{text-align:left;padding:9px 12px;border-bottom:2px solid var(--border);font-size:.63rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700;white-space:nowrap}
+.tbl td{padding:11px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:var(--bg)}
+.pm{font-family:var(--fm);font-size:.9rem;font-weight:700}
+.pg{font-family:var(--fm);font-size:.75rem;color:var(--muted)}
+.bv{background:#ECFDF5!important}
+.bt{background:#D1FAE5;color:#065F46;font-size:.62rem;font-weight:700;padding:2px 7px;border-radius:20px;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.pill{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:.7rem;font-weight:600}
+.p-np{background:#D1FAE5;color:#065F46}
+.p-nm{background:#DBEAFE;color:#1E40AF}
+.p-nc{background:#FFEDD5;color:#9A3412}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:.68rem;font-weight:600;background:var(--bg);color:var(--muted);border:1px solid var(--border)}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
+.full{grid-column:1/-1}
+.cw{position:relative;width:100%}
+.h260{height:260px}.h300{height:300px}.h200{height:200px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.75rem;color:var(--muted);margin-bottom:.75rem}
+.li{display:flex;align-items:center;gap:5px}
+.ld{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+.empty{text-align:center;padding:3rem;color:var(--muted)}
+.empty-t{font-size:1rem;font-weight:600;color:var(--text);margin:1rem 0 .4rem}
+.goal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem}
+.gcard{padding:1rem;border:1px solid var(--border);border-radius:8px;border-top-width:3px}
+.gc-brand{font-size:.72rem;font-weight:700;margin-bottom:8px}
+.gc-name{font-size:.82rem;font-weight:600}
+.gc-price{font-size:.75rem;color:var(--muted)}
+.sec-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+.sec-t{font-size:.95rem;font-weight:700}
+.info-badge{font-size:.68rem;background:#EFF6FF;color:#1E40AF;border:1px solid #BFDBFE;padding:2px 8px;border-radius:20px;font-weight:600}
+.warn-badge{font-size:.68rem;background:#FFFBEB;color:#92400E;border:1px solid #FDE68A;padding:2px 8px;border-radius:20px;font-weight:600}
+@media(max-width:860px){.shell{grid-template-columns:1fr}.sidebar{height:auto;position:static;flex-direction:row;flex-wrap:wrap;padding:1rem;gap:1rem}.chart-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="shell">
+<nav class="sidebar">
+  <div><div class="logo">NutriComp<span>Comparateur FR · Mars 2026</span></div></div>
+  <div>
+    <div class="nav-sec">Marques</div>
+    <div class="nav-item" id="brand-all" onclick="setBrandNav('Tous',this)" style="opacity:1;background:rgba(255,255,255,.1)"><span class="ndot" style="background:#9CA3AF"></span>Toutes les marques</div>
+    <div class="nav-item" id="brand-np" onclick="setBrandNav('Nutripure',this)"><span class="ndot d-np"></span>Nutripure</div>
+    <div class="nav-item" id="brand-nm" onclick="setBrandNav('Nutrimuscle',this)"><span class="ndot d-nm"></span>Nutrimuscle</div>
+    <div class="nav-item" id="brand-nc" onclick="setBrandNav("Nutri & Co",this)"><span class="ndot" style="background:#FB923C"></span>Nutri &amp; Co</div>
+  </div>
+  <div>
+    <div class="nav-sec">Vues</div>
+    <div class="nav-item active" onclick="showTab('catalogue',this)">&#9776;&nbsp; Catalogue complet</div>
+    <div class="nav-item" onclick="showTab('comparatif',this)">&#9654;&nbsp; Comparatif</div>
+    <div class="nav-item" onclick="showTab('objectifs',this)">&#9670;&nbsp; Objectifs</div>
+    <div class="nav-item" onclick="showTab('charts',this)">&#9636;&nbsp; Graphiques</div>
+  </div>
+  <div style="margin-top:auto;font-size:.68rem;opacity:.35;line-height:1.7">
+    258 produits<br>Données du 26/03/2026<br>3 marques comparées
+  </div>
+</nav>
+<main class="main">
+
+<!-- COMPARATIF -->
+<div id="panel-comparatif" class="panel">
+  <div class="ptitle">Comparatif produits</div>
+  <div class="psub">Prix par gramme · seuls les produits avec taille connue sont comparables</div>
+  <div class="filter-bar">
+    <input id="cmp-search" type="text" placeholder="🔍 Rechercher un produit… ex : whey, créatine, collagène" oninput="renderCmp(activeCat)" style="padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--ff);font-size:.85rem;width:320px;transition:border-color .15s" onfocus="this.style.borderColor='var(--np)'" onblur="this.style.borderColor='var(--border)'">
+  </div>
+  <div class="filter-bar"><span class="fl">Catégorie :</span><div id="cat-chips"></div></div>
+  <div id="cmp-content"></div>
+</div>
+
+<!-- OBJECTIFS -->
+<div id="panel-objectifs" class="panel">
+  <div class="ptitle">Par objectif</div>
+  <div class="psub">Trouvez les produits adaptés à votre objectif, marque par marque</div>
+  <div class="filter-bar">
+    <input id="goal-search" type="text" placeholder="🔍 Rechercher un produit… ex : magnésium, oméga" oninput="renderGoals(activeGoal)" style="padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--ff);font-size:.85rem;width:320px;transition:border-color .15s" onfocus="this.style.borderColor='var(--np)'" onblur="this.style.borderColor='var(--border)'">
+  </div>
+  <div class="filter-bar"><span class="fl">Objectif :</span><div id="goal-chips"></div></div>
+  <div id="goal-content"></div>
+</div>
+
+<!-- CHARTS -->
+<div id="panel-charts" class="panel">
+  <div class="ptitle">Analyses graphiques</div>
+  <div class="psub">Visualisations comparatives — seuls les produits avec poids/quantité connus</div>
+  <div id="charts-content"></div>
+</div>
+
+<!-- CATALOGUE -->
+<div id="panel-catalogue" class="panel active">
+  <div class="ptitle">Catalogue complet</div>
+  <div class="psub">Tous les produits — recherche et filtre par marque</div>
+  <div class="filter-bar">
+    <input id="search" type="text" placeholder="🔍 Rechercher un produit…" oninput="filterCatalogue()" style="padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--ff);font-size:.85rem;width:280px;transition:border-color .15s" onfocus="this.style.borderColor='var(--np)'" onblur="this.style.borderColor='var(--border)'">
+    <div id="brand-chips"></div>
+  </div>
+  <div id="cat-content"></div>
+</div>
+
+</main>
+</div>
+<script>
+const DATA = [{"brand":"Nutripure","name":"Active Curcumine","variant":"3 formats","price":29.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits?page=2","category":"Antioxydants","goal":"Bien-être"},{"brand":"Nutripure","name":"Aromes naturels Whey et Peptan","variant":"9 arômes","price":7.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits?page=2","category":"Protéines","goal":"Performance"},{"brand":"Nutripure","name":"Arthropure²","variant":"3 formats","price":37.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits","category":"Articulations","goal":"Articulations"},{"brand":"Nutripure","name":"Ashwagandha KSM66 bio","variant":"3 formats","price":24.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits","category":"Hormonal/Stress","goal":"Bien-être"},{"brand":"Nutripure","name":"Barre collagène","variant":null,"price":14.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits","category":"Collagène","goal":"Récupération"},{"brand":"Nutripure","name":"Barre énergétique Long Distance","variant":"2 formats","price":12.5,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits?page=2","category":"Autre","goal":"Autre"},{"brand":"Nutripure","name":"BCAA 2.1.1","variant":"8 formats","price":22.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits","category":"BCAA","goal":"Performance"},{"brand":"Nutripure","name":"Bisglycinate de Fer","variant":"3 formats","price":19.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits","category":"Minéraux","goal":"Santé générale"},{"brand":"Nutripure","name":"Boisson de récupération - Recovery Long Distance","variant":null,"price":34.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits?page=2","category":"Récupération","goal":"Récupération"},{"brand":"Nutripure","name":"Boisson énergétique 60g Long Distance","variant":null,"price":32.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits?page=2","category":"Énergie","goal":"Énergie"},{"brand":"Nutripure","name":"Bêta-Alanine","variant":"Nouveauté","price":12.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits","category":"Énergie","goal":"Performance"},{"brand":"Nutripure","name":"Collagène Marin Sauvage","variant":"5 arômes","price":89.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits","category":"Collagène","goal":"Récupération"},{"brand":"Nutripure","name":"Collagène Marin Sauvage Chocolat","variant":"5 arômes","price":97.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits?page=3","category":"Collagène","goal":"Récupération"},{"brand":"Nutripure","name":"Collagène Marin Sauvage Citron","variant":"5 arômes","price":97.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits?page=3","category":"Collagène","goal":"Récupération"},{"brand":"Nutripure","name":"Collagène Marin Sauvage Framboise","variant":"5 arômes","price":97.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits?page=3","category":"Collagène","goal":"Récupération"},{"brand":"Nutripure","name":"Collagène Marin Sauvage Fruits Exotiques","variant":"5 arômes","price":37.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits?page=3","category":"Collagène","goal":"Récupération"},{"brand":"Nutripure","name":"Créatine (Creapure®)","variant":"5 formats","price":39.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits","category":"Créatine","goal":"Performance"},{"brand":"Nutripure","name":"Farine de Patate douce bio","variant":"3 formats","price":13.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits","category":"Glucides","goal":"Autre"},{"brand":"Nutripure","name":"Fenugrec","variant":"3 formats","price":24.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits","category":"Hormonal/Stress","goal":"Bien-être"},{"brand":"Nutripure","name":"Feuilles d'ortie bio en poudre","variant":"3 formats","price":9.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits","category":"Hormonal/Stress","goal":"Bien-être"},{"brand":"Nutripure","name":"Gel énergétique Long Distance","variant":null,"price":29.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits?page=2","category":"Énergie","goal":"Énergie"},{"brand":"Nutripure","name":"Ghee bio","variant":"2 formats","price":11.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits","category":"Autre","goal":"Autre"},{"brand":"Nutripure","name":"Glycine","variant":"2 formats","price":12.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits","category":"Récupération","goal":"Récupération"},{"brand":"Nutripure","name":"Huile de Bourrache","variant":"3 formats","price":12.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits","category":"Autre","goal":"Autre"},{"brand":"Nutripure","name":"Huile de coco bio","variant":"1 format","price":6.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits","category":"Autre","goal":"Autre"},{"brand":"Nutripure","name":"L-Carnitine Carnipure®","variant":null,"price":22.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits?page=2","category":"Brûleurs","goal":"Composition corporelle"},{"brand":"Nutripure","name":"L-Citrulline","variant":null,"price":24.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits","category":"Autre","goal":"Performance"},{"brand":"Nutripure","name":"L-Glutamine","variant":null,"price":12.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits","category":"Récupération","goal":"Récupération"},{"brand":"Nutripure","name":"L-Tryptophane","variant":"Nouveauté","price":14.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits?page=2","category":"Hormonal/Stress","goal":"Bien-être"},{"brand":"Nutripure","name":"Magnesium Taurine B6","variant":"180 gélules (3 mois)","price":39.9,"qty":180.0,"unit":"gélules","ppg":0.2216666666666667,"ppg_base":"€/gélules","status":"En ligne","url":"https://www.nutripure.fr/fr/sante/3-magnesium-taurine-B6.html","category":"Magnésium","goal":"Autre"},{"brand":"Nutripure","name":"Magnésium³ Poudre","variant":"1 format","price":16.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits","category":"Magnésium","goal":"Récupération"},{"brand":"Nutripure","name":"Maltodextrine bio","variant":"2 formats","price":15.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits","category":"Glucides","goal":"Énergie"},{"brand":"Nutripure","name":"Multivitamines","variant":"180 gélules (3 mois)","price":58.4,"qty":180.0,"unit":"gélules","ppg":0.3244444444444444,"ppg_base":"€/gélules","status":"En ligne","url":"https://www.nutripure.fr/fr/sante/1-multi-vitamines-mineraux.html","category":"Vitamine","goal":"Santé générale"},{"brand":"Nutripure","name":"NAC","variant":"Nouveauté","price":13.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits?page=2","category":"Autre","goal":"Autre"},{"brand":"Nutripure","name":"NeuroMagné²","variant":"Nouveauté","price":29.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits","category":"Autre","goal":"Autre"},{"brand":"Nutripure","name":"Nootropure","variant":"3 formats","price":34.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits?page=2","category":"Autre","goal":"Autre"},{"brand":"Nutripure","name":"Omega 3 Epax","variant":"540 capsules (6 mois)","price":94.9,"qty":540.0,"unit":"capsules","ppg":0.1757407407407408,"ppg_base":"€/capsules","status":"Historique client","url":"https://www.nutripure.fr/fr/sante/2-omega-3-EPAX.html","category":"Oméga-3","goal":"Santé générale"},{"brand":"Nutripure","name":"Omega 3 Epax","variant":"600 capsules (ancien format)","price":99.9,"qty":600.0,"unit":"capsules","ppg":0.1665,"ppg_base":"€/capsules","status":"Historique client","url":"https://www.nutripure.fr/fr/sante/2-omega-3-EPAX.html","category":"Oméga-3","goal":"Santé générale"},{"brand":"Nutripure","name":"Omega 3 Epax","variant":"Variante sélectionnée non explicitée","price":69.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/sante/2-omega-3-EPAX.html","category":"Oméga-3","goal":"Santé générale"},{"brand":"Nutripure","name":"Pastilles Hydratation - Electrolytes","variant":null,"price":13.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits","category":"Énergie","goal":"Autre"},{"brand":"Nutripure","name":"Peptide de collagène Peptan®","variant":"9 arômes","price":54.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits","category":"Protéines","goal":"Récupération"},{"brand":"Nutripure","name":"PeptoPro® - Hydrolysat de Caséine","variant":"3 arômes","price":24.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits?page=2","category":"Protéines","goal":"Récupération"},{"brand":"Nutripure","name":"Protéine végétale bio","variant":"2 arômes","price":29.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits","category":"Protéines","goal":"Performance"},{"brand":"Nutripure","name":"Pure Bio² (Pré et Probiotiques)","variant":"3 formats","price":19.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits","category":"Probiotiques","goal":"Santé générale"},{"brand":"Nutripure","name":"Pure Detox - Bien-Être du foie","variant":null,"price":19.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits","category":"Autre","goal":"Autre"},{"brand":"Nutripure","name":"Pure Electrolytes","variant":"2 formats","price":14.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits?page=2","category":"Énergie","goal":"Autre"},{"brand":"Nutripure","name":"Pure Gainer","variant":"3 arômes","price":29.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits","category":"Autre","goal":"Autre"},{"brand":"Nutripure","name":"Pure Granola Bio","variant":"3 formats","price":8.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits?page=2","category":"Autre","goal":"Autre"},{"brand":"Nutripure","name":"Pure Pate A Tartiner Bio","variant":"3 formats","price":5.99,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits?page=2","category":"Autre","goal":"Autre"},{"brand":"Nutripure","name":"Pure Porridge Bio","variant":"3 formats","price":6.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits?page=2","category":"Autre","goal":"Autre"},{"brand":"Nutripure","name":"Pure Recovery","variant":"2 formats","price":44.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits","category":"Récupération","goal":"Récupération"},{"brand":"Nutripure","name":"Pure Sommeil","variant":"4 formats","price":22.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits?page=2","category":"Autre","goal":"Autre"},{"brand":"Nutripure","name":"Pure Workout","variant":"2 formats","price":34.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits?page=2","category":"Autre","goal":"Autre"},{"brand":"Nutripure","name":"Pure Zen","variant":"3 formats","price":22.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits","category":"Autre","goal":"Autre"},{"brand":"Nutripure","name":"Raw Barre Bio","variant":"2 formats","price":12.5,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits?page=2","category":"Autre","goal":"Autre"},{"brand":"Nutripure","name":"Rhodiola Rosea + Safran","variant":"3 formats","price":34.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits?page=2","category":"Autre","goal":"Autre"},{"brand":"Nutripure","name":"Vitamine B3 (Niacinamide)","variant":null,"price":12.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits?page=2","category":"Vitamine","goal":"Santé générale"},{"brand":"Nutripure","name":"Vitamine B9","variant":"Nouveauté","price":15.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits?page=2","category":"Vitamine","goal":"Santé générale"},{"brand":"Nutripure","name":"Vitamine C","variant":null,"price":13.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits","category":"Vitamine","goal":"Santé générale"},{"brand":"Nutripure","name":"Vitamine D3 K2-MK7 1000 UI","variant":"2 formats","price":17.91,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits","category":"Vitamine","goal":"Santé générale"},{"brand":"Nutripure","name":"Vitamine D3 K2-MK7 3000 UI","variant":"2 formats","price":24.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits","category":"Vitamine","goal":"Santé générale"},{"brand":"Nutripure","name":"Whey Isolate native","variant":"Goût neutre - Sachet 750G","price":37.9,"qty":750.0,"unit":"g","ppg":0.05053333333333333,"ppg_base":"€/g","status":"En ligne","url":"https://www.nutripure.fr/fr/musculation/13-whey-isolate-native.html","category":"Protéines","goal":"Performance"},{"brand":"Nutripure","name":"Zinc Bisglycinate","variant":"2 formats","price":16.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://www.nutripure.fr/fr/29-gamme-produits?page=2","category":"Minéraux","goal":"Santé générale"},{"brand":"Nutrimuscle","name":"Acides Aminés du Collagène en gélules","variant":null,"price":16.95,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"Unknown","url":"https://www.nutrimuscle.com/products/acides-amines-du-collagene-4-4-1-en-gelules","category":"Collagène","goal":"Récupération"},{"brand":"Nutrimuscle","name":"Arginine (L-Arginine Base)","variant":null,"price":13.95,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"Unknown","url":"https://www.nutrimuscle.com/products/arginine-l-arginine-base","category":"Autre","goal":"Performance"},{"brand":"Nutrimuscle","name":"Astaxanthine Astareal® - 6mg","variant":null,"price":17.95,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"Unknown","url":"https://www.nutrimuscle.com/products/astaxanthine-astareal-r","category":"Antioxydants","goal":"Autre"},{"brand":"Nutrimuscle","name":"BCAA 4.1.1 Constructeurs en gélules","variant":"120 gélules","price":14.95,"qty":120.0,"unit":"gélules","ppg":0.1245833333333333,"ppg_base":"€/gélules","status":"InStock","url":"https://www.nutrimuscle.com/products/bcaa-4-1-1-constructeurs-en-gelules","category":"BCAA","goal":"Performance"},{"brand":"Nutrimuscle","name":"BCAA 4.1.1 Constructeurs en gélules","variant":"400 gélules","price":34.95,"qty":400.0,"unit":"gélules","ppg":0.08737500000000001,"ppg_base":"€/gélules","status":"InStock","url":"https://www.nutrimuscle.com/products/bcaa-4-1-1-constructeurs-en-gelules","category":"BCAA","goal":"Performance"},{"brand":"Nutrimuscle","name":"BCAA 4.1.1 Constructeurs en gélules","variant":"800 gélules","price":59.95,"qty":800.0,"unit":"gélules","ppg":0.0749375,"ppg_base":"€/gélules","status":"InStock","url":"https://www.nutrimuscle.com/products/bcaa-4-1-1-constructeurs-en-gelules","category":"BCAA","goal":"Performance"},{"brand":"Nutrimuscle","name":"Bêta-Alanine Carnosyn® en gélules","variant":"120 gélules","price":19.95,"qty":120.0,"unit":"gélules","ppg":0.16625,"ppg_base":"€/gélules","status":"InStock","url":"https://www.nutrimuscle.com/products/beta-alanine-carnosyn-r-en-gelules","category":"Énergie","goal":"Performance"},{"brand":"Nutrimuscle","name":"Bêta-Alanine Carnosyn® en gélules","variant":"400 gélules","price":59.95,"qty":400.0,"unit":"gélules","ppg":0.149875,"ppg_base":"€/gélules","status":"InStock","url":"https://www.nutrimuscle.com/products/beta-alanine-carnosyn-r-en-gelules","category":"Énergie","goal":"Performance"},{"brand":"Nutrimuscle","name":"Gélules de BCAA 2.1.2 Résistance","variant":"120 gélules","price":14.95,"qty":120.0,"unit":"gélules","ppg":0.1245833333333333,"ppg_base":"€/gélules","status":"OutOfStock","url":"https://www.nutrimuscle.com/products/bcaa-2-1-2-resistance-en-gelules","category":"BCAA","goal":"Performance"},{"brand":"Nutrimuscle","name":"Barres Protéine & Collagène - lot de 4","variant":null,"price":11.49,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"Unknown","url":"https://www.nutrimuscle.com/products/barres-proteine-collagene","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"Barres Protéine & Energie - lot de 4","variant":null,"price":11.49,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"Unknown","url":"https://www.nutrimuscle.com/products/barres-proteine-energie","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"CLA","variant":"120 capsules","price":14.95,"qty":120.0,"unit":"capsules","ppg":0.1245833333333333,"ppg_base":"€/capsules","status":"OutOfStock","url":"https://www.nutrimuscle.com/products/cla","category":"Brûleurs","goal":"Composition corporelle"},{"brand":"Nutrimuscle","name":"CLA","variant":"360 capsules","price":39.95,"qty":360.0,"unit":"capsules","ppg":0.1109722222222222,"ppg_base":"€/capsules","status":"OutOfStock","url":"https://www.nutrimuscle.com/products/cla","category":"Brûleurs","goal":"Composition corporelle"},{"brand":"Nutrimuscle","name":"Carnitine Carnipure® en gélules","variant":"90 gélules","price":14.95,"qty":90.0,"unit":"gélules","ppg":0.1661111111111111,"ppg_base":"€/gélules","status":"InStock","url":"https://www.nutrimuscle.com/products/carnitine-carnipure-r-en-gelules","category":"Brûleurs","goal":"Composition corporelle"},{"brand":"Nutrimuscle","name":"Citicoline (CDP-choline) en gélules","variant":"60 gélules","price":34.95,"qty":60.0,"unit":"gélules","ppg":0.5825,"ppg_base":"€/gélules","status":"InStock","url":"https://www.nutrimuscle.com/products/citicoline-cdp-choline-en-gelules","category":"Autre","goal":"Bien-être"},{"brand":"Nutrimuscle","name":"Citrate de Magnésium en gélules","variant":"120 gélules","price":14.95,"qty":120.0,"unit":"gélules","ppg":0.1245833333333333,"ppg_base":"€/gélules","status":"InStock","url":"https://www.nutrimuscle.com/products/citrate-de-magnesium-en-gelules","category":"Magnésium","goal":"Récupération"},{"brand":"Nutrimuscle","name":"Citrate de Potassium en gélules","variant":"120 gélules","price":19.95,"qty":120.0,"unit":"gélules","ppg":0.16625,"ppg_base":"€/gélules","status":"InStock","url":"https://www.nutrimuscle.com/products/citrate-de-potassium-en-gelules","category":"Minéraux","goal":"Autre"},{"brand":"Nutrimuscle","name":"Citrulline (L-citrulline base) en gélules","variant":"90 gélules","price":13.95,"qty":90.0,"unit":"gélules","ppg":0.155,"ppg_base":"€/gélules","status":"InStock","url":"https://www.nutrimuscle.com/products/citrulline-l-citrulline-base-en-gelules","category":"Autre","goal":"Performance"},{"brand":"Nutrimuscle","name":"Collagen Repair","variant":"300 g","price":54.95,"qty":300.0,"unit":"g","ppg":0.1831666666666667,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/nutrimix-articulaire","category":"Collagène","goal":"Récupération"},{"brand":"Nutrimuscle","name":"Collagen Repair","variant":"600 g","price":99.95,"qty":600.0,"unit":"g","ppg":0.1665833333333333,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/nutrimix-articulaire","category":"Collagène","goal":"Récupération"},{"brand":"Nutrimuscle","name":"Collagen Repair","variant":"1,50 kg","price":229.95,"qty":1500.0,"unit":"g","ppg":0.1533,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/nutrimix-articulaire","category":"Collagène","goal":"Récupération"},{"brand":"Nutrimuscle","name":"Collagène 2 (Colartix®) en gélules","variant":"45 gélules","price":24.95,"qty":45.0,"unit":"gélules","ppg":0.5544444444444444,"ppg_base":"€/gélules","status":"OutOfStock","url":"https://www.nutrimuscle.com/products/collagene-colartix-en-gelules","category":"Collagène","goal":"Récupération"},{"brand":"Nutrimuscle","name":"Collagène 2 (Colartix®) en gélules","variant":"120 gélules","price":32.95,"qty":120.0,"unit":"gélules","ppg":0.2745833333333333,"ppg_base":"€/gélules","status":"OutOfStock","url":"https://www.nutrimuscle.com/products/collagene-colartix-en-gelules","category":"Collagène","goal":"Récupération"},{"brand":"Nutrimuscle","name":"Collagène 2 (Colartix®) en gélules","variant":"400 gélules","price":99.95,"qty":400.0,"unit":"gélules","ppg":0.249875,"ppg_base":"€/gélules","status":"OutOfStock","url":"https://www.nutrimuscle.com/products/collagene-colartix-en-gelules","category":"Collagène","goal":"Récupération"},{"brand":"Nutrimuscle","name":"Collagène Marin Peptan® en gélules","variant":"120 gélules","price":24.95,"qty":120.0,"unit":"gélules","ppg":0.2079166666666667,"ppg_base":"€/gélules","status":"InStock","url":"https://www.nutrimuscle.com/products/collagene-marin-peptan-r-1-en-gelules","category":"Protéines","goal":"Récupération"},{"brand":"Nutrimuscle","name":"Collagène Marin Peptan® en gélules","variant":"400 gélules","price":56.95,"qty":400.0,"unit":"gélules","ppg":0.142375,"ppg_base":"€/gélules","status":"InStock","url":"https://www.nutrimuscle.com/products/collagene-marin-peptan-r-1-en-gelules","category":"Protéines","goal":"Récupération"},{"brand":"Nutrimuscle","name":"Collagène Peptides Peptan® en gélules","variant":"120 gélules","price":12.95,"qty":120.0,"unit":"gélules","ppg":0.1079166666666667,"ppg_base":"€/gélules","status":"InStock","url":"https://www.nutrimuscle.com/products/collagene-peptides-peptan-r-1-en-gelules","category":"Protéines","goal":"Récupération"},{"brand":"Nutrimuscle","name":"Collagène Peptides Peptan® en gélules","variant":"400 gélules","price":29.95,"qty":400.0,"unit":"gélules","ppg":0.074875,"ppg_base":"€/gélules","status":"InStock","url":"https://www.nutrimuscle.com/products/collagene-peptides-peptan-r-1-en-gelules","category":"Protéines","goal":"Récupération"},{"brand":"Nutrimuscle","name":"Collagène Peptides Peptan® en gélules","variant":"800 gélules","price":54.95,"qty":800.0,"unit":"gélules","ppg":0.0686875,"ppg_base":"€/gélules","status":"InStock","url":"https://www.nutrimuscle.com/products/collagene-peptides-peptan-r-1-en-gelules","category":"Protéines","goal":"Récupération"},{"brand":"Nutrimuscle","name":"Collagène Peptides Peptan® en gélules","variant":"1600 gélules","price":99.95,"qty":1600.0,"unit":"gélules","ppg":0.06246875,"ppg_base":"€/gélules","status":"InStock","url":"https://www.nutrimuscle.com/products/collagene-peptides-peptan-r-1-en-gelules","category":"Protéines","goal":"Récupération"},{"brand":"Nutrimuscle","name":"Complexe Magnésium","variant":"60 gélules","price":19.95,"qty":60.0,"unit":"gélules","ppg":0.3325,"ppg_base":"€/gélules","status":"OutOfStock","url":"https://www.nutrimuscle.com/products/complexe-magnesium-gelules","category":"Magnésium","goal":"Récupération"},{"brand":"Nutrimuscle","name":"Complexe Vitamines & Minéraux","variant":"60 gélules","price":26.95,"qty":60.0,"unit":"gélules","ppg":0.4491666666666667,"ppg_base":"€/gélules","status":"InStock","url":"https://www.nutrimuscle.com/products/mens-immune-health","category":"Vitamine","goal":"Santé générale"},{"brand":"Nutrimuscle","name":"Créatine (Creapure®) en gélules","variant":"120 gélules","price":14.95,"qty":120.0,"unit":"gélules","ppg":0.1245833333333333,"ppg_base":"€/gélules","status":"InStock","url":"https://www.nutrimuscle.com/products/creatine-creapure-r-en-gelules","category":"Créatine","goal":"Performance"},{"brand":"Nutrimuscle","name":"Créatine (Creapure®) en gélules","variant":"400 gélules","price":44.95,"qty":400.0,"unit":"gélules","ppg":0.112375,"ppg_base":"€/gélules","status":"InStock","url":"https://www.nutrimuscle.com/products/creatine-creapure-r-en-gelules","category":"Créatine","goal":"Performance"},{"brand":"Nutrimuscle","name":"Créatine (Creapure®) en gélules","variant":"800 gélules","price":77.95,"qty":800.0,"unit":"gélules","ppg":0.09743750000000001,"ppg_base":"€/gélules","status":"InStock","url":"https://www.nutrimuscle.com/products/creatine-creapure-r-en-gelules","category":"Créatine","goal":"Performance"},{"brand":"Nutrimuscle","name":"Créatine Micronisée (Opticreatine™)","variant":"Passion Hibiscus 90 g","price":10.95,"qty":90.0,"unit":"g","ppg":0.1216666666666667,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/creatine-micronisee-opticreatine","category":"Créatine","goal":"Performance"},{"brand":"Nutrimuscle","name":"Créatine Micronisée (Opticreatine™)","variant":"350 g","price":37.95,"qty":350.0,"unit":"g","ppg":0.1084285714285714,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/creatine-micronisee-opticreatine","category":"Créatine","goal":"Performance"},{"brand":"Nutrimuscle","name":"Créatine Micronisée (Opticreatine™)","variant":"600 g","price":59.95,"qty":600.0,"unit":"g","ppg":0.09991666666666667,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/creatine-micronisee-opticreatine","category":"Créatine","goal":"Performance"},{"brand":"Nutrimuscle","name":"Créatine Micronisée (Opticreatine™)","variant":"Fraise Framboise 90 g","price":10.95,"qty":90.0,"unit":"g","ppg":0.1216666666666667,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/creatine-micronisee-opticreatine","category":"Créatine","goal":"Performance"},{"brand":"Nutrimuscle","name":"Créatine Micronisée (Opticreatine™)","variant":"350 g","price":37.95,"qty":350.0,"unit":"g","ppg":0.1084285714285714,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/creatine-micronisee-opticreatine","category":"Créatine","goal":"Performance"},{"brand":"Nutrimuscle","name":"Créatine Micronisée (Opticreatine™)","variant":"600 g","price":59.95,"qty":600.0,"unit":"g","ppg":0.09991666666666667,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/creatine-micronisee-opticreatine","category":"Créatine","goal":"Performance"},{"brand":"Nutrimuscle","name":"Créatine Micronisée (Opticreatine™)","variant":"Nature 90 g","price":10.95,"qty":90.0,"unit":"g","ppg":0.1216666666666667,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/creatine-micronisee-opticreatine","category":"Créatine","goal":"Performance"},{"brand":"Nutrimuscle","name":"Créatine Micronisée (Opticreatine™)","variant":"350 g","price":37.95,"qty":350.0,"unit":"g","ppg":0.1084285714285714,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/creatine-micronisee-opticreatine","category":"Créatine","goal":"Performance"},{"brand":"Nutrimuscle","name":"Créatine Micronisée (Opticreatine™)","variant":"600 g","price":59.95,"qty":600.0,"unit":"g","ppg":0.09991666666666667,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/creatine-micronisee-opticreatine","category":"Créatine","goal":"Performance"},{"brand":"Nutrimuscle","name":"Curcumine","variant":"60 capsules","price":24.95,"qty":60.0,"unit":"capsules","ppg":0.4158333333333333,"ppg_base":"€/capsules","status":"OutOfStock","url":"https://www.nutrimuscle.com/products/curcumine","category":"Antioxydants","goal":"Bien-être"},{"brand":"Nutrimuscle","name":"Curcumine","variant":"180 capsules","price":64.95,"qty":180.0,"unit":"capsules","ppg":0.3608333333333333,"ppg_base":"€/capsules","status":"OutOfStock","url":"https://www.nutrimuscle.com/products/curcumine","category":"Antioxydants","goal":"Bien-être"},{"brand":"Nutrimuscle","name":"Cluster Dextrin®","variant":"500 g","price":19.95,"qty":500.0,"unit":"g","ppg":0.0399,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/cluster-dextrin-r","category":"Glucides","goal":"Performance"},{"brand":"Nutrimuscle","name":"Cluster Dextrin®","variant":"1,20 kg","price":39.95,"qty":1200.0,"unit":"g","ppg":0.03329166666666667,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/cluster-dextrin-r","category":"Glucides","goal":"Performance"},{"brand":"Nutrimuscle","name":"Crème de riz en poudre","variant":"Chocolat 1,70 kg","price":25.95,"qty":1700.0,"unit":"g","ppg":0.01526470588235294,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/creme-de-riz","category":"Glucides","goal":"Énergie"},{"brand":"Nutrimuscle","name":"Crème de riz en poudre","variant":"6 kg","price":74.95,"qty":6000.0,"unit":"g","ppg":0.01249166666666667,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/creme-de-riz","category":"Glucides","goal":"Énergie"},{"brand":"Nutrimuscle","name":"Crème de riz en poudre","variant":"Vanille 1,70 kg","price":25.95,"qty":1700.0,"unit":"g","ppg":0.01526470588235294,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/creme-de-riz","category":"Glucides","goal":"Énergie"},{"brand":"Nutrimuscle","name":"Crème de riz en poudre","variant":"6 kg","price":74.95,"qty":6000.0,"unit":"g","ppg":0.01249166666666667,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/creme-de-riz","category":"Glucides","goal":"Énergie"},{"brand":"Nutrimuscle","name":"Crème de riz en poudre","variant":"Nature 1,70 kg","price":25.95,"qty":1700.0,"unit":"g","ppg":0.01526470588235294,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/creme-de-riz","category":"Glucides","goal":"Énergie"},{"brand":"Nutrimuscle","name":"Crème de riz en poudre","variant":"6 kg","price":74.95,"qty":6000.0,"unit":"g","ppg":0.01249166666666667,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/creme-de-riz","category":"Glucides","goal":"Énergie"},{"brand":"Nutrimuscle","name":"Dextrose","variant":"6.00 kg","price":49.95,"qty":6000.0,"unit":"g","ppg":0.008325,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/dextrose","category":"Glucides","goal":"Énergie"},{"brand":"Nutrimuscle","name":"Deep Recovery Protein","variant":"Vanille/Chocolat/Fraise 1.00 kg","price":44.95,"qty":1000.0,"unit":"g","ppg":0.04495,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/deep-recovery-protein","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"Diet Protein Blend","variant":"Chocolat/Vanille 1.00 kg","price":44.95,"qty":1000.0,"unit":"g","ppg":0.04495,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/diet-protein-blend","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"Diet Protein Blend","variant":"Chocolat/Vanille 4.00 kg","price":149.95,"qty":4000.0,"unit":"g","ppg":0.0374875,"ppg_base":"€/g","status":"Rupture","url":"https://www.nutrimuscle.com/products/diet-protein-blend","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"Electrolytes Hydratation - Effervescent","variant":"Format effervescent","price":4.95,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"Unknown","url":"https://www.nutrimuscle.com/products/electrolytes-hydratation-effervescent","category":"Énergie","goal":"Santé générale"},{"brand":"Nutrimuscle","name":"Energy - Effervescent","variant":"Citron vert 10 comprimés","price":4.95,"qty":10.0,"unit":"comprimés","ppg":0.495,"ppg_base":"€/comprimés","status":"OutOfStock","url":"https://www.nutrimuscle.com/products/energy-effervescent","category":"Énergie","goal":"Santé générale"},{"brand":"Nutrimuscle","name":"Enzymes digestives (Digezyme®)","variant":"30 gélules","price":14.95,"qty":30.0,"unit":"gélules","ppg":0.4983333333333333,"ppg_base":"€/gélules","status":"Unknown","url":"https://www.nutrimuscle.com/products/enzymes-digestives-digezyme-r","category":"Autre","goal":"Autre"},{"brand":"Nutrimuscle","name":"Fat Burner : Choline & inositol","variant":"120 gélules","price":24.95,"qty":120.0,"unit":"gélules","ppg":0.2079166666666667,"ppg_base":"€/gélules","status":"InStock","url":"https://www.nutrimuscle.com/products/fat-burner","category":"Brûleurs","goal":"Composition corporelle"},{"brand":"Nutrimuscle","name":"Fat Burner : Choline & inositol","variant":"400 gélules","price":79.95,"qty":400.0,"unit":"gélules","ppg":0.199875,"ppg_base":"€/gélules","status":"Rupture","url":"https://www.nutrimuscle.com/products/fat-burner","category":"Brûleurs","goal":"Composition corporelle"},{"brand":"Nutrimuscle","name":"Flex Recovery","variant":"120 gélules","price":39.95,"qty":120.0,"unit":"gélules","ppg":0.3329166666666667,"ppg_base":"€/gélules","status":"Unknown","url":"https://www.nutrimuscle.com/products/artiprane","category":"Articulations","goal":"Récupération"},{"brand":"Nutrimuscle","name":"Farine de patate douce blanche biologique","variant":"1.00 kg","price":19.95,"qty":1000.0,"unit":"g","ppg":0.01995,"ppg_base":"€/g","status":"Unknown","url":"https://www.nutrimuscle.com/products/farine-de-patate-douce-blanche-biologique","category":"Glucides","goal":"Autre"},{"brand":"Nutrimuscle","name":"Farine de patate douce blanche biologique","variant":"2.00 kg","price":32.95,"qty":2000.0,"unit":"g","ppg":0.016475,"ppg_base":"€/g","status":"Unknown","url":"https://www.nutrimuscle.com/products/farine-de-patate-douce-blanche-biologique","category":"Glucides","goal":"Autre"},{"brand":"Nutrimuscle","name":"Farine de patate douce blanche biologique","variant":"6.00 kg","price":89.95,"qty":6000.0,"unit":"g","ppg":0.01499166666666667,"ppg_base":"€/g","status":"Unknown","url":"https://www.nutrimuscle.com/products/farine-de-patate-douce-blanche-biologique","category":"Glucides","goal":"Autre"},{"brand":"Nutrimuscle","name":"Farine de patate douce blanche biologique","variant":"20.00 kg","price":269.95,"qty":20000.0,"unit":"g","ppg":0.0134975,"ppg_base":"€/g","status":"Unknown","url":"https://www.nutrimuscle.com/products/farine-de-patate-douce-blanche-biologique","category":"Glucides","goal":"Autre"},{"brand":"Nutrimuscle","name":"Flocons de sarrasin biologiques","variant":"5.00 kg","price":49.95,"qty":5000.0,"unit":"g","ppg":0.00999,"ppg_base":"€/g","status":"Unknown","url":"https://www.nutrimuscle.com/products/flocons-de-sarrasin-biologiques","category":"Glucides","goal":"Autre"},{"brand":"Nutrimuscle","name":"Glucosamine (N-Acetylglucosamine) Hyalurogluco™ en gélules","variant":"30 gélules","price":19.95,"qty":30.0,"unit":"gélules","ppg":0.6649999999999999,"ppg_base":"€/gélules","status":"InStock","url":"https://www.nutrimuscle.com/products/glucosamine-n-acetylglucosamine-en-gelules","category":"Articulations","goal":"Articulations"},{"brand":"Nutrimuscle","name":"Glucosamine (N-Acetylglucosamine) Hyalurogluco™ en gélules","variant":"120 gélules","price":64.95,"qty":120.0,"unit":"gélules","ppg":0.54125,"ppg_base":"€/gélules","status":"InStock","url":"https://www.nutrimuscle.com/products/glucosamine-n-acetylglucosamine-en-gelules","category":"Articulations","goal":"Articulations"},{"brand":"Nutrimuscle","name":"Glutathion Setria®","variant":"30 gélules","price":14.95,"qty":30.0,"unit":"gélules","ppg":0.4983333333333333,"ppg_base":"€/gélules","status":"InStock","url":"https://www.nutrimuscle.com/products/glutathion-setria-r","category":"Antioxydants","goal":"Autre"},{"brand":"Nutrimuscle","name":"Glutathion Setria®","variant":"90 gélules","price":39.95,"qty":90.0,"unit":"gélules","ppg":0.4438888888888889,"ppg_base":"€/gélules","status":"InStock","url":"https://www.nutrimuscle.com/products/glutathion-setria-r","category":"Antioxydants","goal":"Autre"},{"brand":"Nutrimuscle","name":"Glycerol Glyceromax","variant":"100 g","price":16.95,"qty":100.0,"unit":"g","ppg":0.1695,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/glycerol-glyceromax","category":"Autre","goal":"Autre"},{"brand":"Nutrimuscle","name":"Glycerol Glyceromax","variant":"350 g","price":44.95,"qty":350.0,"unit":"g","ppg":0.1284285714285714,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/glycerol-glyceromax","category":"Autre","goal":"Autre"},{"brand":"Nutrimuscle","name":"Glycine cristallisée en gélules","variant":"120 gélules","price":12.95,"qty":120.0,"unit":"gélules","ppg":0.1079166666666667,"ppg_base":"€/gélules","status":"InStock","url":"https://www.nutrimuscle.com/products/glycine-cristallisee-en-gelules","category":"Récupération","goal":"Récupération"},{"brand":"Nutrimuscle","name":"Huile de Krill SuperbaBoost®","variant":"60 capsules","price":27.95,"qty":60.0,"unit":"capsules","ppg":0.4658333333333333,"ppg_base":"€/capsules","status":"InStock","url":"https://www.nutrimuscle.com/products/huile-de-krill","category":"Oméga-3","goal":"Santé générale"},{"brand":"Nutrimuscle","name":"Huile de Krill SuperbaBoost®","variant":"120 capsules","price":49.95,"qty":120.0,"unit":"capsules","ppg":0.41625,"ppg_base":"€/capsules","status":"InStock","url":"https://www.nutrimuscle.com/products/huile-de-krill","category":"Oméga-3","goal":"Santé générale"},{"brand":"Nutrimuscle","name":"Huile de Krill SuperbaBoost®","variant":"400 capsules","price":149.95,"qty":400.0,"unit":"capsules","ppg":0.374875,"ppg_base":"€/capsules","status":"InStock","url":"https://www.nutrimuscle.com/products/huile-de-krill","category":"Oméga-3","goal":"Santé générale"},{"brand":"Nutrimuscle","name":"Intra-Workout","variant":"Nature 600 g","price":39.95,"qty":600.0,"unit":"g","ppg":0.06658333333333334,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/intra-workout","category":"Énergie","goal":"Performance"},{"brand":"Nutrimuscle","name":"Intra-Workout","variant":"Citron 600 g","price":39.95,"qty":600.0,"unit":"g","ppg":0.06658333333333334,"ppg_base":"€/g","status":"Rupture","url":"https://www.nutrimuscle.com/products/intra-workout","category":"Énergie","goal":"Performance"},{"brand":"Nutrimuscle","name":"Iode Marin","variant":"60 gélules","price":9.95,"qty":60.0,"unit":"gélules","ppg":0.1658333333333333,"ppg_base":"€/gélules","status":"InStock","url":"https://www.nutrimuscle.com/products/iode-marin","category":"Minéraux","goal":"Santé générale"},{"brand":"Nutrimuscle","name":"Isolat de Caséine Micellaire Native","variant":"1kg","price":39.95,"qty":1000.0,"unit":"g","ppg":0.03995,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/isolat-de-caseine-micellaire-92","category":"Protéines","goal":"Récupération"},{"brand":"Nutrimuscle","name":"Isolat de Caséine Micellaire Native","variant":"3kg","price":108.95,"qty":3000.0,"unit":"g","ppg":0.03631666666666667,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/isolat-de-caseine-micellaire-92","category":"Protéines","goal":"Récupération"},{"brand":"Nutrimuscle","name":"Isolat de Caséine Micellaire Native","variant":"15kg nature","price":524.95,"qty":15000.0,"unit":"g","ppg":0.03499666666666667,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/isolat-de-caseine-micellaire-92","category":"Protéines","goal":"Récupération"},{"brand":"Nutrimuscle","name":"Isolat de Caséine Micellaire Native","variant":"20kg chocolat/vanille","price":699.95,"qty":20000.0,"unit":"g","ppg":0.0349975,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/isolat-de-caseine-micellaire-92","category":"Protéines","goal":"Récupération"},{"brand":"Nutrimuscle","name":"Isolate Native Whey Mix - Musclewhey","variant":"500g","price":25.95,"qty":500.0,"unit":"g","ppg":0.0519,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/musclewhey-mix-protein","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"Isolate Native Whey Mix - Musclewhey","variant":"1kg","price":46.95,"qty":1000.0,"unit":"g","ppg":0.04695000000000001,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/musclewhey-mix-protein","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"Isolate Native Whey Mix - Musclewhey","variant":"2.25kg","price":95.95,"qty":2250.0,"unit":"g","ppg":0.04264444444444444,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/musclewhey-mix-protein","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"Isolate Native Whey Mix - Musclewhey","variant":"4kg","price":153.95,"qty":4000.0,"unit":"g","ppg":0.03848749999999999,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/musclewhey-mix-protein","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"Isolate Native Whey Mix - Musclewhey","variant":"20kg","price":729.95,"qty":20000.0,"unit":"g","ppg":0.0364975,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/musclewhey-mix-protein","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"Musclemasse - Hard Gainer","variant":"1.80kg","price":29.95,"qty":1800.0,"unit":"g","ppg":0.01663888888888889,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/musclemasse-hard-gainer","category":"Autre","goal":"Autre"},{"brand":"Nutrimuscle","name":"Musclemasse - Hard Gainer","variant":"6kg","price":89.95,"qty":6000.0,"unit":"g","ppg":0.01499166666666667,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/musclemasse-hard-gainer","category":"Autre","goal":"Autre"},{"brand":"Nutrimuscle","name":"Musclemasse - Hard Gainer","variant":"20kg","price":282.95,"qty":20000.0,"unit":"g","ppg":0.0141475,"ppg_base":"€/g","status":"Rupture","url":"https://www.nutrimuscle.com/products/musclemasse-hard-gainer","category":"Autre","goal":"Autre"},{"brand":"Nutrimuscle","name":"Native Clear Whey","variant":"500g","price":34.95,"qty":500.0,"unit":"g","ppg":0.0699,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/clear-whey","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"Native Clear Whey","variant":"1kg","price":65.95,"qty":1000.0,"unit":"g","ppg":0.06595000000000001,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/clear-whey","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"PeptiStrong® en poudre","variant":"100 g","price":40.95,"qty":100.0,"unit":"g","ppg":0.4095,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/peptistrong-en-poudre","category":"Autre","goal":"Autre"},{"brand":"Nutrimuscle","name":"Pure Milk Protein","variant":"1kg","price":29.95,"qty":1000.0,"unit":"g","ppg":0.02995,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/proteines-totales","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"Pure Milk Protein","variant":"2.25kg","price":64.95,"qty":2250.0,"unit":"g","ppg":0.02886666666666667,"ppg_base":"€/g","status":"Rupture","url":"https://www.nutrimuscle.com/products/proteines-totales","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"Pure Milk Protein","variant":"4kg","price":105.95,"qty":4000.0,"unit":"g","ppg":0.0264875,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/proteines-totales","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"Pure Milk Protein","variant":"20kg","price":499.95,"qty":20000.0,"unit":"g","ppg":0.0249975,"ppg_base":"€/g","status":"Rupture","url":"https://www.nutrimuscle.com/products/proteines-totales","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"Pure Milk Protein Biologiques","variant":"1kg","price":39.95,"qty":1000.0,"unit":"g","ppg":0.03995,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/proteines-totales-biologiques","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"Pure Milk Protein Biologiques","variant":"3kg","price":119.95,"qty":3000.0,"unit":"g","ppg":0.03998333333333334,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/proteines-totales-biologiques","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"Pure Milk Protein Biologiques","variant":"20kg","price":669.95,"qty":20000.0,"unit":"g","ppg":0.0334975,"ppg_base":"€/g","status":"Rupture","url":"https://www.nutrimuscle.com/products/proteines-totales-biologiques","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"Whey Native","variant":"Nature 500g","price":18.95,"qty":500.0,"unit":"g","ppg":0.0379,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/whey-native","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"Whey Native","variant":"Chocolat/Vanille 500g","price":19.95,"qty":500.0,"unit":"g","ppg":0.0399,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/whey-native","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"Whey Native","variant":"1kg","price":37.95,"qty":1000.0,"unit":"g","ppg":0.03795,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/whey-native","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"Whey Native","variant":"2.25kg","price":80.95,"qty":2250.0,"unit":"g","ppg":0.03597777777777778,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/whey-native","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"Whey Native","variant":"4kg","price":131.95,"qty":4000.0,"unit":"g","ppg":0.0329875,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/whey-native","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"Whey Native Isolate","variant":"500g","price":31.95,"qty":500.0,"unit":"g","ppg":0.0639,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/whey-native-isolate","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"Whey Native Isolate","variant":"1kg","price":57.95,"qty":1000.0,"unit":"g","ppg":0.05795,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/whey-native-isolate","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"Whey Native Isolate","variant":"2.25kg","price":116.95,"qty":2250.0,"unit":"g","ppg":0.05197777777777778,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/whey-native-isolate","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"Whey Native Isolate","variant":"4kg","price":190.95,"qty":4000.0,"unit":"g","ppg":0.0477375,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/whey-native-isolate","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"Whey Native Isolate","variant":"20kg","price":679.95,"qty":20000.0,"unit":"g","ppg":0.0339975,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/whey-native-isolate","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"Whey Native Isolate","variant":"sachets 50g","price":3.0,"qty":50.0,"unit":"g","ppg":0.06,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/whey-native-isolate","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"Whey Native Isolate (Low lactose)","variant":"1.50kg","price":96.95,"qty":1500.0,"unit":"g","ppg":0.06463333333333333,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/whey-native-isolate-low-lactose","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"Whey Native Isolate (Low lactose)","variant":"2.25kg","price":130.95,"qty":2250.0,"unit":"g","ppg":0.05819999999999999,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/whey-native-isolate-low-lactose","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"Whey Native Isolate (Low lactose)","variant":"4kg","price":213.95,"qty":4000.0,"unit":"g","ppg":0.0534875,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/whey-native-isolate-low-lactose","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"Whey Native Protimuscle®","variant":"500g","price":18.95,"qty":500.0,"unit":"g","ppg":0.0379,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/protimuscle-mix-protein","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"Whey Native Protimuscle®","variant":"1kg ou selon saveur","price":34.95,"qty":1000.0,"unit":"g","ppg":0.03495,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/protimuscle-mix-protein","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"Whey Native Protimuscle®","variant":"2.25kg","price":73.95,"qty":2250.0,"unit":"g","ppg":0.03286666666666667,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/protimuscle-mix-protein","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"Whey Native Protimuscle®","variant":"4kg","price":119.95,"qty":4000.0,"unit":"g","ppg":0.0299875,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/protimuscle-mix-protein","category":"Protéines","goal":"Performance"},{"brand":"Nutrimuscle","name":"Whey Native Protimuscle®","variant":"20kg","price":599.95,"qty":20000.0,"unit":"g","ppg":0.0299975,"ppg_base":"€/g","status":"InStock","url":"https://www.nutrimuscle.com/products/protimuscle-mix-protein","category":"Protéines","goal":"Performance"},{"brand":"Nutri & Co","name":"Collagène Marin","variant":"7 arômes","price":30.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Collagène","goal":"Récupération"},{"brand":"Nutri & Co","name":"Magnésium B6","variant":"60 Gélules","price":14.9,"qty":60.0,"unit":"gélules","ppg":0.2483,"ppg_base":"gélule","status":"En ligne","url":"https://nutriandco.com/fr/produits/magnesium","category":"Magnésium","goal":"Récupération"},{"brand":"Nutri & Co","name":"Magnésium B6","variant":"120 Gélules","price":19.9,"qty":120.0,"unit":"gélules","ppg":0.1658,"ppg_base":"gélule","status":"En ligne","url":"https://nutriandco.com/fr/produits/magnesium","category":"Magnésium","goal":"Récupération"},{"brand":"Nutri & Co","name":"Probiotiques et prébiotiques","variant":"60 Gélules","price":27.9,"qty":60.0,"unit":"gélules","ppg":0.465,"ppg_base":"gélule","status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Probiotiques","goal":"Santé générale"},{"brand":"Nutri & Co","name":"Multivitamines","variant":"60 Gélules","price":19.9,"qty":60.0,"unit":"gélules","ppg":0.3317,"ppg_base":"gélule","status":"En ligne","url":"https://nutriandco.com/fr/produits/multivitamines","category":"Vitamine","goal":"Santé générale"},{"brand":"Nutri & Co","name":"Multivitamines","variant":"90 Gélules","price":27.9,"qty":90.0,"unit":"gélules","ppg":0.31,"ppg_base":"gélule","status":"En ligne","url":"https://nutriandco.com/fr/produits/multivitamines","category":"Vitamine","goal":"Santé générale"},{"brand":"Nutri & Co","name":"Whey Isolate Native","variant":"900 g","price":54.9,"qty":900.0,"unit":"g","ppg":0.061,"ppg_base":"g","status":"En ligne","url":"https://nutriandco.com/fr/produits/whey-isolate-native","category":"Protéines","goal":"Performance"},{"brand":"Nutri & Co","name":"Whey Isolate Native","variant":"Lot 3 x 900 g","price":148.23,"qty":2700.0,"unit":"g","ppg":0.0549,"ppg_base":"g","status":"En ligne","url":"https://nutriandco.com/fr/produits/whey-isolate-native","category":"Protéines","goal":"Performance"},{"brand":"Nutri & Co","name":"Créatine","variant":"300 g","price":25.9,"qty":300.0,"unit":"g","ppg":0.0863,"ppg_base":"g","status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Créatine","goal":"Performance"},{"brand":"Nutri & Co","name":"Tripeptides de collagène","variant":"2 arômes","price":39.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Collagène","goal":"Récupération"},{"brand":"Nutri & Co","name":"Vitamine D3 Lanoline","variant":"15 ml","price":11.9,"qty":15.0,"unit":"ml","ppg":0.7933,"ppg_base":"ml","status":"En ligne","url":"https://nutriandco.com/fr/produits/vitamine-d-lanoline","category":"Vitamine","goal":"Santé générale"},{"brand":"Nutri & Co","name":"Barres protéine Whey x12","variant":"Format 12 unités","price":34.9,"qty":12.0,"unit":"unités","ppg":2.9083,"ppg_base":"unité","status":"En ligne","url":"https://nutriandco.com/fr/packs/proteine-barre","category":"Protéines","goal":"Performance"},{"brand":"Nutri & Co","name":"Vitamine C liposomale","variant":null,"price":24.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Vitamine","goal":"Santé générale"},{"brand":"Nutri & Co","name":"Spiruline Française & Bio","variant":"120 Comprimés","price":19.9,"qty":120.0,"unit":"comprimés","ppg":0.1658,"ppg_base":"comprimé","status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Minéraux","goal":"Santé générale"},{"brand":"Nutri & Co","name":"Électrolytes - Hydratation","variant":"15 Comprimés effervescents","price":9.9,"qty":15.0,"unit":"comprimés","ppg":0.66,"ppg_base":"comprimé","status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Énergie","goal":"Énergie"},{"brand":"Nutri & Co","name":"Probiotique Peau Nette","variant":"60 Gélules","price":19.9,"qty":60.0,"unit":"gélules","ppg":0.3317,"ppg_base":"gélule","status":"En ligne","url":"https://nutriandco.com/fr/produits/peau-nette","category":"Probiotiques","goal":"Santé générale"},{"brand":"Nutri & Co","name":"Solaire","variant":"60 Gélules","price":29.9,"qty":60.0,"unit":"gélules","ppg":0.4983,"ppg_base":"gélule","status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Peau & Beauté","goal":"Bien-être"},{"brand":"Nutri & Co","name":"Acide Hyaluronique","variant":"60 Gélules","price":24.9,"qty":60.0,"unit":"gélules","ppg":0.415,"ppg_base":"gélule","status":"En ligne","url":"https://nutriandco.com/fr/produits/acide-hyaluronique","category":"Articulations","goal":"Articulations"},{"brand":"Nutri & Co","name":"Whey Concentrée Native","variant":"900 g","price":39.9,"qty":900.0,"unit":"g","ppg":0.0443,"ppg_base":"g","status":"En ligne","url":"https://nutriandco.com/fr/produits/whey-native","category":"Protéines","goal":"Performance"},{"brand":"Nutri & Co","name":"Whey Concentrée Native","variant":"Lot 3 x 900 g","price":107.73,"qty":2700.0,"unit":"g","ppg":0.0399,"ppg_base":"g","status":"En ligne","url":"https://nutriandco.com/fr/produits/whey-native","category":"Protéines","goal":"Performance"},{"brand":"Nutri & Co","name":"Collagène Marin - 540g","variant":"540 g","price":75.9,"qty":540.0,"unit":"g","ppg":0.1406,"ppg_base":"g","status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Collagène","goal":"Récupération"},{"brand":"Nutri & Co","name":"Oméga-3","variant":"60 Capsules","price":14.9,"qty":60.0,"unit":"capsules","ppg":0.2483,"ppg_base":"capsule","status":"En ligne","url":"https://nutriandco.com/fr/produits/omega-3","category":"Oméga-3","goal":"Santé générale"},{"brand":"Nutri & Co","name":"Oméga-3","variant":"120 Capsules","price":19.9,"qty":120.0,"unit":"capsules","ppg":0.1658,"ppg_base":"capsule","status":"En ligne","url":"https://nutriandco.com/fr/produits/omega-3","category":"Oméga-3","goal":"Santé générale"},{"brand":"Nutri & Co","name":"Protéine Végétale","variant":null,"price":29.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Protéines","goal":"Performance"},{"brand":"Nutri & Co","name":"BCAA 4.1.1","variant":"225 g","price":29.9,"qty":225.0,"unit":"g","ppg":0.1329,"ppg_base":"g","status":"En ligne","url":"https://nutriandco.com/fr/produits/bcaa-eaa","category":"BCAA","goal":"Performance"},{"brand":"Nutri & Co","name":"Curcuma Bio","variant":"60 Gélules","price":19.9,"qty":60.0,"unit":"gélules","ppg":0.3317,"ppg_base":"gélule","status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Antioxydants","goal":"Bien-être"},{"brand":"Nutri & Co","name":"Antioxydant","variant":"60 Gélules","price":27.9,"qty":60.0,"unit":"gélules","ppg":0.465,"ppg_base":"gélule","status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Antioxydants","goal":"Santé générale"},{"brand":"Nutri & Co","name":"Mélatonine en spray","variant":"20 ml","price":13.9,"qty":20.0,"unit":"ml","ppg":0.695,"ppg_base":"ml","status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Hormonal/Stress","goal":"Bien-être"},{"brand":"Nutri & Co","name":"Ashwagandha Bio","variant":"120 Gélules","price":20.9,"qty":120.0,"unit":"gélules","ppg":0.1742,"ppg_base":"gélule","status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Hormonal/Stress","goal":"Bien-être"},{"brand":"Nutri & Co","name":"Fibres Bio","variant":"150 g","price":19.9,"qty":150.0,"unit":"g","ppg":0.1327,"ppg_base":"g","status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Minéraux","goal":"Santé générale"},{"brand":"Nutri & Co","name":"Chardon-Marie Bio","variant":"60 Gélules","price":19.9,"qty":60.0,"unit":"gélules","ppg":0.3317,"ppg_base":"gélule","status":"En ligne","url":"https://nutriandco.com/fr/produits/chardon-marie","category":"Autre","goal":"Autre"},{"brand":"Nutri & Co","name":"Articulations","variant":"60 Gélules","price":29.9,"qty":60.0,"unit":"gélules","ppg":0.4983,"ppg_base":"gélule","status":"En ligne","url":"https://nutriandco.com/fr/produits/articulation","category":"Autre","goal":"Autre"},{"brand":"Nutri & Co","name":"Complexe Cheveux","variant":"60 Gélules","price":26.9,"qty":60.0,"unit":"gélules","ppg":0.4483,"ppg_base":"gélule","status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Autre","goal":"Autre"},{"brand":"Nutri & Co","name":"Booster","variant":"60 Gélules","price":24.9,"qty":60.0,"unit":"gélules","ppg":0.415,"ppg_base":"gélule","status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Autre","goal":"Autre"},{"brand":"Nutri & Co","name":"Enzymes & Pissenlit","variant":"40 Gélules","price":19.9,"qty":40.0,"unit":"gélules","ppg":0.4975,"ppg_base":"gélule","status":"En ligne","url":"https://nutriandco.com/fr/produits/enzymes","category":"Autre","goal":"Autre"},{"brand":"Nutri & Co","name":"Boisson énergétique isotonique","variant":"490 g","price":20.9,"qty":490.0,"unit":"g","ppg":0.0427,"ppg_base":"g","status":"En ligne","url":"https://nutriandco.com/fr/produits/boisson-energetique-isotonique","category":"Énergie","goal":"Énergie"},{"brand":"Nutri & Co","name":"Pre-workout","variant":"220 g","price":39.9,"qty":220.0,"unit":"g","ppg":0.1814,"ppg_base":"g","status":"En ligne","url":"https://nutriandco.com/fr/produits/pre-workout","category":"Autre","goal":"Autre"},{"brand":"Nutri & Co","name":"Tribulus terrestris","variant":"120 Gélules","price":19.9,"qty":120.0,"unit":"gélules","ppg":0.1658,"ppg_base":"gélule","status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Autre","goal":"Autre"},{"brand":"Nutri & Co","name":"Probiotiques","variant":null,"price":19.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Probiotiques","goal":"Santé générale"},{"brand":"Nutri & Co","name":"Coffret Rituel Matcha","variant":null,"price":34.43,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Autre","goal":"Autre"},{"brand":"Nutri & Co","name":"Lactobacillus Gasseri","variant":"60 Gélules","price":19.9,"qty":60.0,"unit":"gélules","ppg":0.3317,"ppg_base":"gélule","status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Autre","goal":"Autre"},{"brand":"Nutri & Co","name":"Ginkgo Biloba","variant":"120 Gélules","price":19.9,"qty":120.0,"unit":"gélules","ppg":0.1658,"ppg_base":"gélule","status":"Rupture","url":"https://nutriandco.com/fr/produits","category":"Autre","goal":"Autre"},{"brand":"Nutri & Co","name":"Brûle-graisse","variant":"60 Gélules","price":34.9,"qty":60.0,"unit":"gélules","ppg":0.5817,"ppg_base":"gélule","status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Autre","goal":"Autre"},{"brand":"Nutri & Co","name":"Formule satiété","variant":"60 Gélules","price":34.9,"qty":60.0,"unit":"gélules","ppg":0.5817,"ppg_base":"gélule","status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Autre","goal":"Autre"},{"brand":"Nutri & Co","name":"Jambes Légères","variant":null,"price":19.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Autre","goal":"Autre"},{"brand":"Nutri & Co","name":"L-Glutamine","variant":"150 g","price":14.9,"qty":150.0,"unit":"g","ppg":0.0993,"ppg_base":"g","status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Récupération","goal":"Récupération"},{"brand":"Nutri & Co","name":"Draineur","variant":null,"price":19.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://nutriandco.com/en/products/draineur","category":"Autre","goal":"Autre"},{"brand":"Nutri & Co","name":"Zinc bisglycinate","variant":"60 Gélules","price":12.9,"qty":60.0,"unit":"gélules","ppg":0.215,"ppg_base":"gélule","status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Minéraux","goal":"Santé générale"},{"brand":"Nutri & Co","name":"Sommeil","variant":"60 Gélules","price":19.9,"qty":60.0,"unit":"gélules","ppg":0.3317,"ppg_base":"gélule","status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Autre","goal":"Autre"},{"brand":"Nutri & Co","name":"Fer Bisglycinate et sa Souche Lactique","variant":null,"price":18.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Minéraux","goal":"Santé générale"},{"brand":"Nutri & Co","name":"Rhodiola Bio","variant":"60 Gélules","price":19.9,"qty":60.0,"unit":"gélules","ppg":0.3317,"ppg_base":"gélule","status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Autre","goal":"Autre"},{"brand":"Nutri & Co","name":"Spray Propolis","variant":null,"price":9.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Autre","goal":"Autre"},{"brand":"Nutri & Co","name":"Iode","variant":null,"price":14.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Minéraux","goal":"Santé générale"},{"brand":"Nutri & Co","name":"Vitamine C","variant":"15 Comprimés effervescents","price":9.9,"qty":15.0,"unit":"comprimés","ppg":0.66,"ppg_base":"comprimé","status":"En ligne","url":"https://nutriandco.com/fr/produits/vitamine-c","category":"Vitamine","goal":"Santé générale"},{"brand":"Nutri & Co","name":"Vitamine B12","variant":"120 Gélules","price":19.9,"qty":120.0,"unit":"gélules","ppg":0.1658,"ppg_base":"gélule","status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Vitamine","goal":"Santé générale"},{"brand":"Nutri & Co","name":"Ménopause","variant":"60 Gélules","price":29.9,"qty":60.0,"unit":"gélules","ppg":0.4983,"ppg_base":"gélule","status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Autre","goal":"Autre"},{"brand":"Nutri & Co","name":"Myo-Inositol","variant":null,"price":19.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Autre","goal":"Autre"},{"brand":"Nutri & Co","name":"Probiotique Flore Intime","variant":"60 Gélules","price":19.9,"qty":60.0,"unit":"gélules","ppg":0.3317,"ppg_base":"gélule","status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Probiotiques","goal":"Santé générale"},{"brand":"Nutri & Co","name":"Collagène Matcha","variant":null,"price":30.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Collagène","goal":"Récupération"},{"brand":"Nutri & Co","name":"Confort Menstruel","variant":"40 Gélules","price":19.9,"qty":40.0,"unit":"gélules","ppg":0.4975,"ppg_base":"gélule","status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Autre","goal":"Autre"},{"brand":"Nutri & Co","name":"Probiotique Stress","variant":"60 Gélules","price":19.9,"qty":60.0,"unit":"gélules","ppg":0.3317,"ppg_base":"gélule","status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Probiotiques","goal":"Santé générale"},{"brand":"Nutri & Co","name":"Glucosamine & Chondroïtine","variant":null,"price":19.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Articulations","goal":"Articulations"},{"brand":"Nutri & Co","name":"Glycine Cristallisée","variant":"300 g","price":14.9,"qty":300.0,"unit":"g","ppg":0.0497,"ppg_base":"g","status":"En ligne","url":"https://nutriandco.com/en/products/glycine-cristallisee","category":"Récupération","goal":"Récupération"},{"brand":"Nutri & Co","name":"Cranberry Mannose","variant":null,"price":16.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Autre","goal":"Autre"},{"brand":"Nutri & Co","name":"Graines de Chia BIO","variant":"1 kg","price":19.9,"qty":1000.0,"unit":"g","ppg":0.0199,"ppg_base":"g","status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Autre","goal":"Autre"},{"brand":"Nutri & Co","name":"Poudre de Baobab BIO","variant":null,"price":19.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Autre","goal":"Autre"},{"brand":"Nutri & Co","name":"Poudre Açai BIO","variant":null,"price":15.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Autre","goal":"Autre"},{"brand":"Nutri & Co","name":"Maca Noire Bio","variant":"120 Gélules","price":22.9,"qty":120.0,"unit":"gélules","ppg":0.1908,"ppg_base":"gélule","status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Autre","goal":"Autre"},{"brand":"Nutri & Co","name":"Pour les Enfants","variant":"15 ml","price":14.9,"qty":15.0,"unit":"ml","ppg":0.9933,"ppg_base":"ml","status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Autre","goal":"Autre"},{"brand":"Nutri & Co","name":"Lactoferrine","variant":null,"price":39.9,"qty":null,"unit":null,"ppg":null,"ppg_base":null,"status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Minéraux","goal":"Santé générale"},{"brand":"Nutri & Co","name":"Coenzyme Q10","variant":"120 Gélules","price":29.9,"qty":120.0,"unit":"gélules","ppg":0.2492,"ppg_base":"gélule","status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Autre","goal":"Autre"},{"brand":"Nutri & Co","name":"Vitamine D Végétale","variant":"15 ml","price":19.9,"qty":15.0,"unit":"ml","ppg":1.3267,"ppg_base":"ml","status":"En ligne","url":"https://nutriandco.com/fr/produits","category":"Vitamine","goal":"Santé générale"}];
+
+const BRANDS=['Nutripure','Nutrimuscle','Nutri & Co'];
+const BC={'Nutripure':'#059669','Nutrimuscle':'#2563EB','Nutri & Co':'#EA580C'};
+const BCL={'Nutripure':'rgba(5,150,105,0.13)','Nutrimuscle':'rgba(37,99,235,0.13)','Nutri & Co':'rgba(234,88,12,0.13)'};
+let charts={};
+let activeBrand='Tous';
+
+function setBrandNav(brand, el){
+  activeBrand=brand;
+  document.querySelectorAll('.nav-item[id^="brand-"]').forEach(n=>{
+    n.style.background='';n.style.opacity='.6';
+  });
+  el.style.background='rgba(255,255,255,.1)';el.style.opacity='1';
+  // Refresh current active panel
+  const activePanel=document.querySelector('.panel.active');
+  if(!activePanel) return;
+  const id=activePanel.id.replace('panel-','');
+  if(id==='comparatif') renderCmp(activeCat);
+  else if(id==='objectifs') renderGoals(activeGoal);
+  else if(id==='catalogue') filterCatalogue();
+  else if(id==='charts') renderCharts();
+  // Update subtitle
+  const sub=activePanel.querySelector('.psub');
+  if(sub&&brand!=='Tous') sub.textContent='Filtre actif : '+brand+' uniquement';
+  else if(sub) sub.textContent=sub.dataset.orig||sub.textContent;
+}
+
+function filteredData(){
+  return activeBrand==='Tous'?DATA:DATA.filter(p=>p.brand===activeBrand);
+}
+
+function brandPill(b){
+  const c=b==='Nutripure'?'p-np':b==='Nutrimuscle'?'p-nm':'p-nc';
+  return `<span class="pill ${c}">${b}</span>`;
+}
+function statusBadge(s){
+  if(!s||s==='Unknown'||s==='En ligne'||s==='InStock') return '';
+  if(s==='OutOfStock'||s==='Rupture') return ' <span class="warn-badge">Rupture</span>';
+  if(s==='Historique client') return ' <span class="info-badge">Historique</span>';
+  return '';
+}
+
+function showTab(tab,el){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('panel-'+tab).classList.add('active');
+  if(el) el.classList.add('active');
+  if(tab==='comparatif') renderCmp(activeCat);
+  if(tab==='objectifs') renderGoals(activeGoal);
+  if(tab==='charts') renderCharts();
+  if(tab==='catalogue') renderCatalogue();
+}
+
+// ---- COMPARATIF ----
+let activeCat='Tous';
+let cmpSort={col:'ppg',dir:'asc'};
+
+function setCmpSort(col){
+  if(cmpSort.col===col) cmpSort.dir=cmpSort.dir==='asc'?'desc':'asc';
+  else {cmpSort.col=col;cmpSort.dir=col==='ppg'||col==='price'?'asc':'asc';}
+  renderCmp(activeCat);
+}
+function renderCmp(selCat){
+  if(selCat!==undefined) activeCat=selCat;
+  const q=(document.getElementById('cmp-search')||{}).value||'';
+  const pool=filteredData();
+  const cats=['Tous',...new Set(pool.map(p=>p.category).filter(Boolean).sort())];
+  const chips=document.getElementById('cat-chips');
+  chips.innerHTML=cats.map(c=>`<button class="chip${c===activeCat?' active':''}" onclick="renderCmp('${c}')">${c}</button>`).join('');
+  
+  let filtered=activeCat==='Tous'?pool:pool.filter(p=>p.category===activeCat);
+  if(q.trim()){
+    const ql=q.toLowerCase().trim();
+    filtered=filtered.filter(p=>p.name.toLowerCase().includes(ql)||(p.variant&&p.variant.toLowerCase().includes(ql))||(p.category&&p.category.toLowerCase().includes(ql)));
+  }
+  if(!filtered.length){
+    document.getElementById('cmp-content').innerHTML=`<div class="empty"><div class="empty-t">Aucun résultat pour "${q}"</div><div style="font-size:.82rem;color:var(--muted);margin-top:.4rem">Essayez : whey, créatine, collagène, magnésium…</div></div>`;
+    return;
+  }
+  const byCat={};
+  filtered.forEach(p=>{if(!byCat[p.category])byCat[p.category]=[];byCat[p.category].push(p);});
+
+  function sortItems(items){
+    const {col,dir}=cmpSort;
+    const d=dir==='asc'?1:-1;
+    return [...items].sort((a,b)=>{
+      if(col==='brand')   return d*a.brand.localeCompare(b.brand);
+      if(col==='name')    return d*a.name.localeCompare(b.name);
+      if(col==='price')   return d*((a.price||0)-(b.price||0));
+      if(col==='qty')     return d*((a.qty||0)-(b.qty||0));
+      if(col==='ppg')     return d*((a.ppg||Infinity)-(b.ppg||Infinity));
+      return 0;
+    });
+  }
+
+  function thSort(col, label){
+    const active=cmpSort.col===col;
+    const arrow=active?(cmpSort.dir==='asc'?' ↑':' ↓'):'';
+    const style=active?'color:var(--text);cursor:pointer;user-select:none;white-space:nowrap':'cursor:pointer;user-select:none;white-space:nowrap';
+    return `<th style="${style}" onclick="setCmpSort('${col}')">${label}${arrow}</th>`;
+  }
+
+  function makeRows(items){
+    const sorted=sortItems(items);
+    const withVal=sorted.filter(p=>p.ppg);
+    const minVal=withVal.length?Math.min(...withVal.map(p=>p.ppg)):null;
+    return sorted.map(p=>{
+      const isBest=p.ppg&&p.ppg===minVal;
+      const valStr=p.ppg?p.ppg.toFixed(4)+' €/'+p.ppg_base.replace('€/',''):'—';
+      const qtyStr=p.qty?(p.unit==='g'||p.unit===''?(p.qty>=1000?(p.qty/1000).toFixed(2)+'kg':p.qty+'g'):p.qty+' '+p.unit):'—';
+      const varLabel=p.variant&&!['format','formats','arôme','arômes'].some(k=>p.variant.toLowerCase().includes(k))?' <small style="color:var(--muted);font-weight:400">('+p.variant+')</small>':'';
+      return `<tr class="${isBest?'bv':''}">
+        <td>${brandPill(p.brand)}${statusBadge(p.status)}</td>
+        <td style="font-weight:600;max-width:220px">${p.name}${varLabel}</td>
+        <td class="pm">${p.price.toFixed(2)} €</td>
+        <td class="pg">${qtyStr}</td>
+        <td class="pg" style="${isBest?'color:var(--np);font-weight:700':''}">${valStr} ${isBest?'<span class="bt">Meilleur</span>':''}</td>
+        ${p.url?`<td><a href="${p.url}" target="_blank" style="font-size:.72rem;color:var(--np)">voir →</a></td>`:'<td></td>'}
+      </tr>`;
+    }).join('');
+  }
+
+  function makeSubTable(items, unitLabel, colHeader){
+    if(!items.length) return '';
+    const unitCol=colHeader==='Poudre / liquide'?'€/g':'€/capsule ou unité';
+    const thead=`<thead><tr>
+      ${thSort('brand','Marque')}
+      ${thSort('name','Produit')}
+      ${thSort('price','Prix')}
+      ${thSort('qty','Quantité')}
+      ${thSort('ppg',unitCol)}
+      <th></th>
+    </tr></thead>`;
+    return `<div style="margin-bottom:.75rem">
+      ${colHeader?`<div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.4rem;padding-left:2px">${colHeader}</div>`:''}
+      <table class="tbl">${thead}<tbody>${makeRows(items)}</tbody></table></div>`;
+  }
+
+  let html='';
+  Object.entries(byCat).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([cat,items])=>{
+    const powder=items.filter(p=>!p.unit||p.unit==='g'||p.unit==='kg'||p.unit==='ml'||p.unit==='l');
+    const caps=items.filter(p=>p.unit&&['capsules','gélules','comprimés'].includes(p.unit.toLowerCase()));
+    const noUnit=items.filter(p=>!p.qty);
+    const total=items.length;
+    let inner='';
+    if(powder.length&&caps.length){
+      inner=makeSubTable(powder,'g','Poudre / liquide')+makeSubTable(caps,'caps','Gélules / capsules');
+      if(noUnit.length) inner+=makeSubTable(noUnit,'','Sans format détaillé');
+    } else {
+      inner=makeSubTable([...powder,...caps,...noUnit],'','');
+    }
+    html+=`<div class="card" style="margin-bottom:1.25rem;overflow-x:auto">
+      <div class="sec-hd" style="margin-bottom:.9rem"><div class="card-title" style="margin:0">${cat}</div><span class="badge">${total} produit${total>1?'s':''}</span></div>
+      ${inner}</div>`;
+  });
+  document.getElementById('cmp-content').innerHTML=html||'<div class="empty"><div class="empty-t">Aucune donnée</div></div>';
+}
+
+// ---- OBJECTIFS ----
+let activeGoal='Tous';
+function renderGoals(selGoal){
+  if(selGoal!==undefined) activeGoal=selGoal;
+  const q=(document.getElementById('goal-search')||{}).value||'';
+  const pool=filteredData();
+  const visibleBrands=activeBrand==='Tous'?BRANDS:[activeBrand];
+  const goals=['Tous',...new Set(pool.map(p=>p.goal).filter(g=>g&&g!=='Autre').sort()),'Autre'];
+  const chips=document.getElementById('goal-chips');
+  chips.innerHTML=goals.map(g=>`<button class="chip${g===activeGoal?' active':''}" onclick="renderGoals('${g}')">${g}</button>`).join('');
+  
+  let filtered=activeGoal==='Tous'?pool:pool.filter(p=>p.goal===activeGoal);
+  if(q.trim()){
+    const ql=q.toLowerCase().trim();
+    filtered=filtered.filter(p=>p.name.toLowerCase().includes(ql)||(p.variant&&p.variant.toLowerCase().includes(ql)));
+  }
+  if(!filtered.length){
+    document.getElementById('goal-content').innerHTML=`<div class="empty"><div class="empty-t">Aucun résultat pour "${q}"</div></div>`;
+    return;
+  }
+  const byGoal={};
+  filtered.forEach(p=>{if(!byGoal[p.goal])byGoal[p.goal]=[];byGoal[p.goal].push(p);});
+  
+  let html='';
+  Object.entries(byGoal).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([goal,items])=>{
+    const byBrand={};visibleBrands.forEach(b=>byBrand[b]=items.filter(p=>p.brand===b));
+    html+=`<div class="card" style="margin-bottom:1.25rem">
+      <div class="card-title">🎯 ${goal} — ${items.length} produit${items.length>1?'s':''}</div>
+      <div class="goal-grid">
+        ${visibleBrands.map(b=>{
+          const bi=byBrand[b];
+          if(!bi.length) return `<div style="padding:.9rem;border:1px dashed var(--border);border-radius:8px;color:var(--muted);font-size:.8rem;text-align:center">${b}<br><span style="font-size:.7rem">Aucun produit</span></div>`;
+          const uniq=[...new Map(bi.map(p=>[p.name,p])).values()].slice(0,5);
+          return `<div class="gcard" style="border-top-color:${BC[b]}">
+            <div class="gc-brand" style="color:${BC[b]}">${b}</div>
+            ${uniq.map(p=>`<div style="margin-bottom:7px">
+              <div class="gc-name">${p.name}</div>
+              <div class="gc-price">${p.price.toFixed(2)} €${p.ppg?' · '+p.ppg.toFixed(4)+' '+p.ppg_base:''}</div>
+            </div>`).join('')}
+            ${bi.length>5?`<div style="font-size:.7rem;color:var(--muted);margin-top:4px">+${bi.length-5} autres variantes</div>`:''}
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  });
+  document.getElementById('goal-content').innerHTML=html||'<div class="empty"><div class="empty-t">Aucune donnée</div></div>';
+}
+
+// ---- CHARTS ----
+function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+
+function renderCharts(){
+  const el=document.getElementById('charts-content');
+  const pool=filteredData();
+  const visibleBrands=activeBrand==='Tous'?BRANDS:[activeBrand];
+
+  const inG=pool.filter(p=>p.ppg&&(!p.unit||p.unit==='g'||p.unit==='kg'));
+  const inCaps=pool.filter(p=>p.ppg&&p.unit&&['capsules','gélules','comprimés'].includes(p.unit.toLowerCase()));
+
+  const avgByBrand={};
+  visibleBrands.forEach(b=>{const bp=pool.filter(x=>x.brand===b);avgByBrand[b]=bp.length?(bp.reduce((s,x)=>s+x.price,0)/bp.length):0;});
+  const countByBrand={};visibleBrands.forEach(b=>countByBrand[b]=pool.filter(x=>x.brand===b).length);
+
+  const gCats=[...new Set(inG.map(p=>p.category))].sort();
+  const cCats=[...new Set(inCaps.map(p=>p.category))].sort();
+  const allCats=[...new Set(pool.map(p=>p.category))].sort();
+
+  el.innerHTML=`
+    <div class="stat-grid">
+      ${visibleBrands.map(b=>`<div class="stat-card">
+        <div class="stat-lbl" style="color:${BC[b]}">${b}</div>
+        <div class="stat-val">${countByBrand[b]}</div>
+        <div class="stat-sub">produits · moy. ${avgByBrand[b].toFixed(2)} €</div>
+      </div>`).join('')}
+      <div class="stat-card"><div class="stat-lbl">Total</div><div class="stat-val">${pool.length}</div><div class="stat-sub">produits comparés</div></div>
+      <div class="stat-card"><div class="stat-lbl">En poudre €/g</div><div class="stat-val">${inG.length}</div><div class="stat-sub">produits comparables</div></div>
+      <div class="stat-card"><div class="stat-lbl">Gélules/caps €/unité</div><div class="stat-val">${inCaps.length}</div><div class="stat-sub">produits comparables</div></div>
+    </div>
+    <div class="chart-grid">
+      <div class="card full">
+        <div class="card-title">Poudres &amp; liquides — prix/g par catégorie × marque (format le moins cher)</div>
+        <div class="legend">${visibleBrands.map(b=>`<span class="li"><span class="ld" style="background:${BC[b]}"></span>${b}</span>`).join('')}</div>
+        <div class="cw h300"><canvas id="c-ppg-g"></canvas></div>
+      </div>
+      <div class="card full">
+        <div class="card-title">Gélules &amp; capsules — prix/capsule par catégorie × marque (format le moins cher)</div>
+        <div class="legend">${visibleBrands.map(b=>`<span class="li"><span class="ld" style="background:${BC[b]}"></span>${b}</span>`).join('')}</div>
+        <div class="cw h260"><canvas id="c-ppg-caps"></canvas></div>
+      </div>
+      <div class="card full">
+        <div class="card-title">Fourchette de prix absolus par catégorie</div>
+        <div class="cw" style="height:${Math.max(200,allCats.length*38+60)}px"><canvas id="c-range"></canvas></div>
+      </div>
+      <div class="card full">
+        <div class="card-title">Whey Protéines — €/g selon volume acheté</div>
+        <div class="legend">${visibleBrands.map(b=>`<span class="li"><span class="ld" style="background:${BC[b]}"></span>${b}</span>`).join('')}</div>
+        <div class="cw h260"><canvas id="c-scatter"></canvas></div>
+      </div>
+    </div>`;
+
+  setTimeout(()=>{
+    ['c-ppg-g','c-ppg-caps','c-range','c-scatter'].forEach(id=>destroyChart(id));
+
+    // Build dataset: y = plain number, metadata stored in parallel array
+    function buildPpgDataset(pool, cats){
+      return visibleBrands.map(b=>{
+        const meta=[];
+        const values=cats.map(cat=>{
+          const items=pool.filter(p=>p.category===cat&&p.brand===b);
+          if(!items.length){meta.push(null);return null;}
+          const best=items.reduce((a,c)=>c.ppg<a.ppg?c:a);
+          const varClean=best.variant&&!['format','formats','arôme','arômes'].some(k=>(best.variant||'').toLowerCase().includes(k))?best.variant:'';
+          meta.push({name:best.name,variant:varClean,price:best.price,qty:best.qty,unit:best.unit||'g'});
+          return best.ppg;
+        });
+        return {label:b,data:values,meta,backgroundColor:BCL[b],borderColor:BC[b],borderWidth:2,borderRadius:4};
+      });
+    }
+
+    function richTooltip(unitLabel){
+      return {callbacks:{label:d=>{
+        const ds=d.dataset;
+        const m=ds.meta&&ds.meta[d.dataIndex];
+        if(!m) return '';
+        const fmtQty=m.qty?(m.qty>=1000?(m.qty/1000).toFixed(1)+'kg':m.qty+m.unit):'';
+        return [
+          `${ds.label}  —  ${(d.parsed.y||0).toFixed(4)} ${unitLabel}`,
+          `   ${m.name}${m.variant?' ('+m.variant+')':''}`,
+          fmtQty?`   ${fmtQty}  ·  ${m.price.toFixed(2)} €`:`   ${m.price.toFixed(2)} €`
+        ];
+      }}};
+    }
+
+    // Chart 1: €/g poudres
+    const gCatsWithData=gCats.filter(cat=>visibleBrands.some(b=>inG.find(p=>p.category===cat&&p.brand===b)));
+    charts['c-ppg-g']=new Chart(document.getElementById('c-ppg-g'),{
+      type:'bar',
+      data:{labels:gCatsWithData,datasets:buildPpgDataset(inG,gCatsWithData)},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:richTooltip('€/g')},scales:{y:{title:{display:true,text:'€/g',font:{size:10}},grid:{color:'#F0EDE8'}},x:{grid:{display:false},ticks:{maxRotation:30}}}}
+    });
+
+    // Chart 2: €/capsule
+    const cCatsWithData=cCats.filter(cat=>visibleBrands.some(b=>inCaps.find(p=>p.category===cat&&p.brand===b)));
+    charts['c-ppg-caps']=new Chart(document.getElementById('c-ppg-caps'),{
+      type:'bar',
+      data:{labels:cCatsWithData,datasets:buildPpgDataset(inCaps,cCatsWithData)},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:richTooltip('€/capsule')},scales:{y:{title:{display:true,text:'€/capsule',font:{size:10}},grid:{color:'#F0EDE8'}},x:{grid:{display:false},ticks:{maxRotation:30}}}}
+    });
+
+    // Chart 3: fourchette prix absolus
+    const rangeData=allCats.map(cat=>{
+      const ps=pool.filter(p=>p.category===cat).map(p=>p.price);
+      return{min:Math.min(...ps),max:Math.max(...ps)};
+    });
+    charts['c-range']=new Chart(document.getElementById('c-range'),{
+      type:'bar',indexAxis:'y',
+      data:{labels:allCats,datasets:[{label:'Prix min',data:rangeData.map(d=>d.min),backgroundColor:'rgba(5,150,105,0.7)',borderRadius:3},{label:'Écart',data:rangeData.map(d=>d.max-d.min),backgroundColor:'rgba(5,150,105,0.18)',borderRadius:3}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{stacked:true,title:{display:true,text:'€'},grid:{color:'#F0EDE8'}},y:{stacked:true,grid:{display:false},ticks:{font:{size:10}}}}}
+    });
+
+    // Chart 4: scatter whey €/g vs volume
+    const whey=inG.filter(p=>p.category==='Protéines'&&p.name.toLowerCase().includes('whey'));
+    charts['c-scatter']=new Chart(document.getElementById('c-scatter'),{
+      type:'scatter',
+      data:{datasets:visibleBrands.map(b=>({label:b,data:whey.filter(p=>p.brand===b).map(p=>({x:p.qty,y:p.ppg,label:p.name+(p.variant?' ('+p.variant+')':'')})),backgroundColor:BC[b],borderColor:BC[b],pointRadius:6,pointHoverRadius:8}))},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:d=>`${d.dataset.label} — ${d.raw.label} : ${d.parsed.y.toFixed(4)} €/g`}}},scales:{x:{title:{display:true,text:'Quantité (g)'},grid:{color:'#F0EDE8'}},y:{title:{display:true,text:'€/g'},grid:{color:'#F0EDE8'}}}}
+    });
+  },80);
+}
+
+// ---- CATALOGUE ----
+let catBrandFilter='Tous';
+function renderCatalogue(){
+  const chips=document.getElementById('brand-chips');
+  if(!chips.children.length){
+    chips.innerHTML=['Tous',...BRANDS].map(b=>`<button class="chip${b===catBrandFilter?' active':''}" onclick="setBrandFilter('${b}')">${b}</button>`).join('');
+  }
+  filterCatalogue();
+}
+function setBrandFilter(b){
+  catBrandFilter=b;
+  document.querySelectorAll('#brand-chips .chip').forEach(c=>{c.classList.toggle('active',c.textContent===b);});
+  filterCatalogue();
+}
+function filterCatalogue(){
+  const q=(document.getElementById('search')||{}).value.toLowerCase();
+  const pool=filteredData();
+  const filtered=pool.filter(p=>{
+    const bOk=catBrandFilter==='Tous'||p.brand===catBrandFilter;
+    const qOk=!q||p.name.toLowerCase().includes(q)||p.category.toLowerCase().includes(q);
+    return bOk&&qOk;
+  });
+  const byCat={};
+  filtered.forEach(p=>{if(!byCat[p.category])byCat[p.category]=[];byCat[p.category].push(p);});
+  let html='';
+  Object.entries(byCat).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([cat,items])=>{
+    const rows=items.map(p=>{
+      const qtyStr=p.qty?(p.qty>=1000?(p.qty/1000).toFixed(1)+'kg':p.qty+'g')+(p.unit&&p.unit!=='g'?' ('+p.unit+')':''):'—';
+      const ppgStr=p.ppg?p.ppg.toFixed(4)+' '+p.ppg_base:'—';
+      return `<tr>
+        <td>${brandPill(p.brand)}${statusBadge(p.status)}</td>
+        <td style="font-weight:600;max-width:200px">${p.name}</td>
+        <td style="color:var(--muted);font-size:.78rem;max-width:130px">${p.variant||'—'}</td>
+        <td class="pm">${p.price.toFixed(2)} €</td>
+        <td class="pg">${qtyStr}</td>
+        <td class="pg">${ppgStr}</td>
+        ${p.url?`<td><a href="${p.url}" target="_blank" style="font-size:.7rem;color:var(--np)">voir →</a></td>`:'<td></td>'}
+      </tr>`;
+    }).join('');
+    html+=`<div class="card" style="margin-bottom:1.25rem;overflow-x:auto">
+      <div class="sec-hd"><div class="card-title" style="margin:0">${cat}</div><span class="badge">${items.length}</span></div>
+      <table class="tbl"><thead><tr><th>Marque</th><th>Produit</th><th>Variante</th><th>Prix</th><th>Format</th><th>€/unité</th><th></th></tr></thead>
+      <tbody>${rows}</tbody></table></div>`;
+  });
+  document.getElementById('cat-content').innerHTML=html||`<div class="empty"><div class="empty-t">Aucun résultat</div></div>`;
+}
+// Init
+renderCatalogue();
+</script>
+</body>
+</html>
